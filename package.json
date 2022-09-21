@@ -24,7 +24,8 @@
     ],
     "activationEvents": [
         "onCommand:mw-thesaurus.synonyms",
-        "onCommand:mw-thesaurus.antonyms"
+        "onCommand:mw-thesaurus.antonyms",
+        "onCommand:mw-thesaurus.clearCache"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -36,6 +37,10 @@
             {
                 "command": "mw-thesaurus.antonyms",
                 "title": "Merriam-Webster Thesaurus: Antonyms"
+            },
+            {
+                "command": "mw-thesaurus.clearCache",
+                "title": "Merriam-Webster Thesaurus: Clear Cache"
             }
         ],
         "menus": {
@@ -46,6 +51,10 @@
                 },
                 {
                     "command": "mw-thesaurus.antonyms",
+                    "group": "mw-thesaurus"
+                },
+                {
+                    "command": "mw-thesaurus.clearCache",
                     "group": "mw-thesaurus"
                 }
             ]

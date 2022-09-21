@@ -3,6 +3,8 @@ import { Config, ListItem } from "./config"
 import { ConfigurationTarget } from 'vscode'
 import fetch from 'node-fetch'
 
+let DataCache: {[key: string]: ApiResponse[] | string[]} = {}
+
 export function activate(context: vscode.ExtensionContext) {
 
 	const getKey = async () => {
@@ -58,6 +60,10 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	const getWordData =async (word: string, key: string): Promise<ApiResponse[] | string[] | undefined> => {
+		const cached = DataCache[word]
+		if (cached) {
+			return cached
+		}
 		const res = await fetch(`https://www.dictionaryapi.com/api/v3/references/thesaurus/json/${encodeURIComponent(word)}?key=${key}`)
 		switch (res.status)
 		{
@@ -71,7 +77,9 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage(`No matches found for word "${word}".`)
 				return
 		}
-		return await res.json()
+		let data = await res.json()
+		DataCache[word] = data
+		return data
 	}
 
 	const getData = async (type: 'Synonyms' | 'Antonyms') => {
@@ -130,6 +138,10 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
+	const clearCache = vscode.commands.registerCommand('mw-thesaurus.clearCache', () => {
+		DataCache = {}
+	})
+
 	const synonyms = vscode.commands.registerCommand('mw-thesaurus.synonyms', async () => {
 		await getData('Synonyms')
 	})
@@ -138,7 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
 		await getData('Antonyms')
 	})
 
-	context.subscriptions.push(synonyms, antonyms)
+	context.subscriptions.push(synonyms, antonyms, clearCache)
 }
 
 export function deactivate() { }
