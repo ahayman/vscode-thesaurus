@@ -1,0 +1,97 @@
+{
+    "name": "merriam-webster-thesaurus",
+    "displayName": "Merriam-Webster Thesaurus",
+    "description": "A thesaurus using the API provided by dictionaryapi.org.",
+    "version": "1.0.0",
+    "publisher": "ahayman",
+    "license": "MIT",
+    "icon": "./icon.png",
+    "homepage": "https://github.com/ahayman/vscode-thesaurus",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ahayman/vscode-thesaurus"
+    },
+    "engines": {
+        "vscode": "^1.71.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "thesaurus",
+        "synonym finder",
+        "antonym finder"
+    ],
+    "activationEvents": [
+        "onCommand:mw-thesaurus.synonyms",
+        "onCommand:mw-thesaurus.antonyms"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "mw-thesaurus.synonyms",
+                "title": "Merriam-Webster Thesaurus: Synonyms"
+            },
+            {
+                "command": "mw-thesaurus.antonyms",
+                "title": "Merriam-Webster Thesaurus: Antonyms"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "mw-thesaurus.synonyms",
+                "key": "ctrl+shift+s",
+                "mac": "cmd+shift+s"
+            },
+            {
+                "command": "mw-thesaurus.antonyms",
+                "key": "ctrl+shift+a",
+                "mac": "cmd+shift+a"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "mw-thesaurus.synonyms",
+                    "group": "mw-thesaurus"
+                },
+                {
+                    "command": "mw-thesaurus.antonyms",
+                    "group": "mw-thesaurus"
+                }
+            ]
+        },
+        "configuration": {
+            "type": "object",
+            "title": "Merriam-Webster Thesaurus",
+            "properties": {
+                "mw-thesaurus.key": {
+                    "description": "The API key to use for the dictionaryapi.org thesaurus service.",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "test": "npm run compile && node out/test/index.js"
+    },
+    "devDependencies": {
+        "@types/mocha": "^9.1.1",
+        "@types/node": "^16.0.0",
+        "@types/node-fetch": "^2.6.2",
+        "@types/vscode": "^1.7.0",
+        "typescript": "^4.8.3",
+        "vscode-test": "^1.6.1"
+    },
+    "dependencies": {
+        "node-fetch": "2.6.2"
+    }
+}
