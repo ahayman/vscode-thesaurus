@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { Config } from "./config"
+import { Config, ListItem } from "./config"
 import { ConfigurationTarget } from 'vscode'
 import fetch from 'node-fetch'
 
@@ -57,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 		return [word, range]
 	}
 
-	const getWordData =async (word: string, key: string): Promise<ApiResponse[] | undefined> => {
+	const getWordData =async (word: string, key: string): Promise<ApiResponse[] | string[] | undefined> => {
 		const res = await fetch(`https://www.dictionaryapi.com/api/v3/references/thesaurus/json/${encodeURIComponent(word)}?key=${key}`)
 		switch (res.status)
 		{
@@ -71,103 +71,71 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showInformationMessage(`No matches found for word "${word}".`)
 				return
 		}
-		const text = await res.text()
-		if (!text.startsWith('[')) {
-			vscode.window.showErrorMessage(`Unknown word, did you mean: ${text}`)
+		return await res.json()
+	}
+
+	const getData = async (type: 'Synonyms' | 'Antonyms') => {
+		let key = await getKey()
+		if (!key) {
+			vscode.window.showWarningMessage('No API key was provided. The thesaurus service cannot be accessed.')
 			return
 		}
-		const data: ApiResponse[] = JSON.parse(text)
-		return data
+
+		const [word, range] = await getWordRange()
+		if (!word) {
+			vscode.window.showWarningMessage('No word found near cursor or in selection.')
+			return
+		}
+
+		const data = await getWordData(word, key)
+		let rIdx = 1
+		const list: ListItem[] | undefined = data?.flatMap(response => {
+			if (typeof response === 'string') {
+				return {
+					label: response
+				}
+			}
+			return response.shortdef.flatMap((def, idx) => {
+				const sep: ListItem = {
+					label: '',
+					kind: vscode.QuickPickItemKind.Separator
+				}
+				const defItem: ListItem = {
+					label: response.hwi.hw,
+					description: def,
+				}
+				const sepafter: ListItem = {
+					label: type,
+					kind: vscode.QuickPickItemKind.Separator
+				}
+				const list = type === 'Synonyms' ? response.meta.syns[idx] : response.meta.ants[idx]
+				const items = list?.map(syn => <ListItem>({
+					label: `(${rIdx++}) ${syn}`,
+					replacement: syn
+				})) ?? []
+				return items.length ? [sep, defItem, sepafter, ...items] : []
+			})
+		})
+
+		if (!list || list.length === 0) {
+			vscode.window.showInformationMessage(`No matches found for word "${word}".`)
+			return
+		}
+
+		const pick = await vscode.window.showQuickPick(list)
+		const replacement = pick?.replacement
+		const editor = vscode.window.activeTextEditor
+		if (replacement && editor) {
+			editor.edit(builder => builder.replace(range ?? editor.selection, replacement))
+		}
 	}
 
 	const synonyms = vscode.commands.registerCommand('mw-thesaurus.synonyms', async () => {
-		let key = await getKey()
-		if (!key) {
-			vscode.window.showWarningMessage('No API key was provided. The thesaurus service cannot be accessed.')
-			return
-		}
-
-		const [word, range] = await getWordRange()
-		if (!word) {
-			vscode.window.showWarningMessage('No word found near cursor or in selection.')
-			return
-		}
-		const data = await getWordData(word, key)
-		if (!data) {
-			return
-		}
-
-		const list = data.flatMap(response => {
-			return response.shortdef.flatMap((def, idx) => {
-				const sep: vscode.QuickPickItem = {
-					label: '',
-					kind: vscode.QuickPickItemKind.Separator
-				}
-				const defItem: vscode.QuickPickItem = {
-					label: response.hwi.hw,
-					description: def,
-				}
-				const sepafter: vscode.QuickPickItem = {
-					label: 'Synonyms',
-					kind: vscode.QuickPickItemKind.Separator
-				}
-				const items = response.meta.syns[idx]?.map(syn => <vscode.QuickPickItem>({
-					label: syn
-				})) ?? []
-				return items.length ? [sep, defItem, sepafter, ...items] : []
-			})
-		})
-
-		const pick = await vscode.window.showQuickPick(list)
-		const editor = vscode.window.activeTextEditor
-		if (pick?.label && editor) {
-			editor.edit(builder => builder.replace(range ?? editor.selection, pick.label))
-		}
+		await getData('Synonyms')
 	})
 
 	const antonyms = vscode.commands.registerCommand('mw-thesaurus.antonyms', async () => {
-		let key = await getKey()
-		if (!key) {
-			vscode.window.showWarningMessage('No API key was provided. The thesaurus service cannot be accessed.')
-			return
-		}
-
-		const [word, range] = await getWordRange()
-		if (!word) {
-			vscode.window.showWarningMessage('No word found near cursor or in selection.')
-			return
-		}
-		const data = await getWordData(word, key)
-		if (!data) {
-			return
-		}
-
-		const list = data.filter(r => r.meta.ants.length > 0).flatMap(response => {
-			return response.shortdef.flatMap((def, idx) => {
-				const sep: vscode.QuickPickItem = {
-					label: '',
-					kind: vscode.QuickPickItemKind.Separator
-				}
-				const defItem: vscode.QuickPickItem = {
-					label: response.hwi.hw,
-					description: def,
-				}
-				const sepafter: vscode.QuickPickItem = {
-					label: 'Antonyms',
-					kind: vscode.QuickPickItemKind.Separator
-				}
-				const items = response.meta.ants[idx]?.map(syn => <vscode.QuickPickItem>({
-					label: syn
-				})) ?? []
-				return items.length ? [sep, defItem, sepafter, ...items] : []
-			})
-		})
-
-		const pick = await vscode.window.showQuickPick(list)
-		const editor = vscode.window.activeTextEditor
-		if (pick?.label && editor) {
-			editor.edit(builder => builder.replace(range ?? editor.selection, pick.label))
-		}
+		await getData('Antonyms')
 	})
 
 	context.subscriptions.push(synonyms, antonyms)

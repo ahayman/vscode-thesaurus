@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "publisher": "ahayman",
     "license": "MIT",
-    "icon": "./icon.png",
+    "icon": "icon.png",
     "homepage": "https://github.com/ahayman/vscode-thesaurus",
     "repository": {
         "type": "git",
@@ -36,18 +36,6 @@
             {
                 "command": "mw-thesaurus.antonyms",
                 "title": "Merriam-Webster Thesaurus: Antonyms"
-            }
-        ],
-        "keybindings": [
-            {
-                "command": "mw-thesaurus.synonyms",
-                "key": "ctrl+shift+s",
-                "mac": "cmd+shift+s"
-            },
-            {
-                "command": "mw-thesaurus.antonyms",
-                "key": "ctrl+shift+a",
-                "mac": "cmd+shift+a"
             }
         ],
         "menus": {
