@@ -99,9 +99,30 @@ export function activate(context: vscode.ExtensionContext) {
 		let rIdx = 1
 		const list: ListItem[] | undefined = data?.flatMap(response => {
 			if (typeof response === 'string') {
-				return {
-					label: response
+				if (rIdx === 1) {
+					return [
+						{
+							label: '',
+							kind: vscode.QuickPickItemKind.Separator
+						},
+						{
+							label: word,
+							description: "Unknown word. Did you mean: "
+						},
+						{
+							label: '',
+							kind: vscode.QuickPickItemKind.Separator
+						},
+						{
+							label: `(${rIdx++}) ${response}`,
+							replacement: response,
+						},
+					]
 				}
+				return [{
+					label: `(${rIdx++}) ${response}`,
+					replacement: response
+				}]
 			}
 			return response.shortdef.flatMap((def, idx) => {
 				const sep: ListItem = {
